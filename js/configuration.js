@@ -9,6 +9,7 @@ const DEFAULT_CONFIGURATIONS = {
         styleOptions: {
             showLogo: true,
             showFileMenu: true,
+            showDevelopersMenu: true,
             showHelpMenu: true,
             showSelectLanguage: true,
             showCompilerOptions: true,
@@ -35,6 +36,7 @@ const DEFAULT_CONFIGURATIONS = {
         styleOptions: {
             showLogo: false,
             showFileMenu: false,
+            showDevelopersMenu: false,
             showHelpMenu: false,
             showSelectLanguage: true,
             showCompilerOptions: false,
@@ -61,6 +63,7 @@ const DEFAULT_CONFIGURATIONS = {
         styleOptions: {
             showLogo: false,
             showFileMenu: true,
+            showDevelopersMenu: true,
             showHelpMenu: true,
             showSelectLanguage: true,
             showCompilerOptions: true,
@@ -87,6 +90,7 @@ const DEFAULT_CONFIGURATIONS = {
         styleOptions: {
             showLogo: false,
             showFileMenu: true,
+            showDevelopersMenu: true,
             showHelpMenu: true,
             showSelectLanguage: true,
             showCompilerOptions: true,
@@ -113,6 +117,7 @@ const DEFAULT_CONFIGURATIONS = {
         styleOptions: {
             showLogo: false,
             showFileMenu: true,
+            showDevelopersMenu: true,
             showHelpMenu: true,
             showSelectLanguage: true,
             showCompilerOptions: true,

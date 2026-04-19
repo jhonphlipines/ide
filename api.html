@@ -89,6 +89,60 @@
     </div>
 
     <div class="ui container">
+        <div id="api-key-management" class="ui segment" style="margin-bottom: 4rem; padding: 2rem;">
+            <h2 class="ui header">API Key Management</h2>
+            <p>Generate and manage your API keys for secure code execution.</p>
+
+            <div id="api-key-form-container" class="ui stackable grid">
+                <div class="six wide column">
+                    <form id="create-key-form" class="ui form">
+                        <div class="field">
+                            <label>Key Name</label>
+                            <input type="text" id="key-name" placeholder="e.g. Production Key" required>
+                        </div>
+                        <div class="field">
+                            <label>Owner Email</label>
+                            <input type="email" id="owner-email" placeholder="dev@company.com" required>
+                        </div>
+                        <button type="submit" class="ui primary button">Generate New Key</button>
+                    </form>
+                </div>
+                <div class="ten wide column">
+                    <div id="new-key-display" class="ui positive message" style="display: none;">
+                        <div class="header">Key Generated Successfully!</div>
+                        <p>Please copy this key now. It will not be shown again.</p>
+                        <div class="ui action input fluid">
+                            <input type="text" id="generated-key" readonly>
+                            <button class="ui teal right labeled icon button" onclick="copyKey()">
+                                <i class="copy icon"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ui divider"></div>
+
+            <h3 class="ui header">Your API Keys</h3>
+            <table class="ui celled table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Prefix</th>
+                        <th>Owner</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="api-keys-table-body">
+                    <tr>
+                        <td colspan="6" class="center aligned">Enter your email to see your keys.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
         <div id="quick-start" class="ui stackable grid">
             <div class="row">
                 <div class="sixteen wide column">
@@ -263,8 +317,90 @@ runCode();</div>
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        import apiMgmt from "./js/api_mgmt.js";
+
         $('.menu .item').tab();
+
+        // In a real app, this would be retrieved after Neon Auth sign-in
+        const AUTH_TOKEN = "DEBUG_TOKEN";
+
+        async function updateKeysTable() {
+            const email = $('#owner-email').val();
+            if (!email) return;
+
+            const tbody = $('#api-keys-table-body');
+            tbody.html('<tr><td colspan="6" class="center aligned"><i class="notched circle loading icon"></i> Loading...</td></tr>');
+
+            try {
+                const keys = await apiMgmt.fetchKeys(email, AUTH_TOKEN);
+                if (keys.length === 0) {
+                    tbody.html('<tr><td colspan="6" class="center aligned">No keys found for this email.</td></tr>');
+                    return;
+                }
+
+                tbody.empty();
+                keys.forEach(key => {
+                    const row = $(`
+                        <tr>
+                            <td>${key.name}</td>
+                            <td><code>${key.key_prefix}...</code></td>
+                            <td>${key.owner_email}</td>
+                            <td><div class="ui ${key.status === 'active' ? 'green' : 'red'} label">${key.status}</div></td>
+                            <td>${new Date(key.created_at).toLocaleDateString()}</td>
+                            <td class="center aligned">
+                                ${key.status === 'active' ? `<button class="ui mini red button" onclick="revokeKey('${key.id}')">Revoke</button>` : ''}
+                            </td>
+                        </tr>
+                    `);
+                    tbody.append(row);
+                });
+            } catch (error) {
+                tbody.html(`<tr><td colspan="6" class="center aligned red">Error: ${error.message}</td></tr>`);
+            }
+        }
+
+        window.copyKey = function() {
+            const input = document.getElementById('generated-key');
+            input.select();
+            document.execCommand('copy');
+            alert('Key copied to clipboard!');
+        }
+
+        window.revokeKey = async function(id) {
+            if (!confirm('Are you sure you want to revoke this key?')) return;
+            try {
+                await apiMgmt.revokeKey(id, AUTH_TOKEN);
+                updateKeysTable();
+            } catch (error) {
+                alert('Error revoking key: ' + error.message);
+            }
+        }
+
+        $('#create-key-form').submit(async function(e) {
+            e.preventDefault();
+            const name = $('#key-name').val();
+            const email = $('#owner-email').val();
+            const btn = $(this).find('button');
+
+            btn.addClass('loading disabled');
+            $('#new-key-display').hide();
+
+            try {
+                const newKey = apiMgmt.generateKey();
+                await apiMgmt.saveKeyToNeon(name, email, newKey, AUTH_TOKEN);
+
+                $('#generated-key').val(newKey);
+                $('#new-key-display').fadeIn();
+                updateKeysTable();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                btn.removeClass('loading disabled');
+            }
+        });
+
+        $('#owner-email').on('blur', updateKeysTable);
     </script>
 </body>
 </html>
